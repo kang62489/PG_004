@@ -1,0 +1,40 @@
+{
+    "infos":{
+        "doc_info":{
+            "Recording Date":"2023_09_26",
+            "Experimenters":"Kang, Gideon"
+        },
+        "animal_info":{
+            "ID":"neoChAT-331",
+            "Sex":"♂",
+            "Strain_Genotype":"C57BL6_ChAT-Cre (Homozygus)",
+            "Species":"Mouse",
+            "DOB":"2023-04-20",
+            "Ages":"22.7 weeks"
+        },
+        "injection_info":{
+            "ACUC Protocol":"2021-011-2 (2021-329)",
+            "Target":"DMS",
+            "Cordinate":"DV , ML(±) , AP ",
+            "Virus_R":"AAV1-ihSyn-tTA-sv40\/TRE-iAChSnFR-minWPRE",
+            "Virus_L":"AAV1-ihSyn-tTA-sv40\/TRE-iAChSnFR-minWPRE",
+            "Date of Injection":"",
+            "Incubated":"0 weeks"
+        },
+        "solution_info":{
+            "Cutting_ACSF":"OS: ; pH: ",
+            "Holding_ACSF":"OS: ; pH: ",
+            "Recording_ACSF":"OS: ; pH: "
+        },
+        "acq_info":{
+            "Recording System":"Ephys D456 Frodo",
+            "Cam Mode":"Ext Exp Ctrl",
+            "Trigger Mode":"90% Unipolar (+) 3.5 V 50 ms Square",
+            "Exposure":"45 ms",
+            "Integration":"45 ms",
+            "Frame Rate":"20 Hz",
+            "Frames Per Trail":"501 frames",
+            "Baseline":"100 frames"
+        }
+    }
+}
