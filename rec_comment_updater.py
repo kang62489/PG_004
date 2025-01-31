@@ -3,11 +3,9 @@
 ## Purpose: update the metadata in the comment of each recording file
 ## based on the *_REC_summary_updated.json file in the notes folder
 
-from hmac import new
 import os
 import sys
 import json
-from numpy import save
 import tifffile
 from pathlib import Path
 from datetime import datetime
