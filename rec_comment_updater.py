@@ -113,7 +113,6 @@ if os.path.exists(rec_filepath):
                         switch_list.append(name)
                     new_rec_summary = rec_summary[switch_list]
                     
-                    new_rec_summary['Filename'] = new_rec_summary['Filename'].replace('-', '_')
                     new_rec_summary['Light'] = new_rec_summary['Light'].replace('LED', 'LED_BLUE')
                     new_rec_summary.rename(columns={'Light': 'EXC'}, inplace=True)
                     new_rec_summary.rename(columns={'Intensity': 'LEVEL'}, inplace=True)
