@@ -1,5 +1,5 @@
 ## Author: Kang
-## Last Update: 2025-Feb-02
+## Last Update: 2025-Feb-03
 ## Purpose: Read the data in *_ImgRecord.xlsx
 
 import os
@@ -9,17 +9,12 @@ from glob import glob
 from pathlib import Path
 from tabulate import tabulate
 from rich import print
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
 def extractExcelData(xlsx_filepath):
     # Read sheet 1 (dataLog) in the xlsx file
-    df_1 = pd.read_excel(xlsx_filepath, sheet_name="dataLog",dtype={"Fluorescence Imaging Recording Basic Infos": str, 
-                                                                  "Unnamed: 1": str,
-                                                                  "Unnamed: 2": str,
-                                                                  "Unnamed: 3": str,
-                                                                  "Unnamed: 4": str,
-                                                                  "Unnamed: 5": str,
-                                                                  "Unnamed: 6": str,
-                                                                  "Unnamed: 7": str,})
+    df_1 = pd.read_excel(xlsx_filepath, sheet_name="dataLog",dtype=str)
     df_1.fillna("", inplace=True)
     for col, item in enumerate(df_1.columns.tolist()):
         df_1.rename(columns={item:f"COL_{col:02d}"}, inplace=True)
@@ -56,9 +51,7 @@ def extractExcelData(xlsx_filepath):
                     break
         
     
-    df_2 = pd.read_excel(xlsx_filepath,sheet_name="RECs",skiprows=[0],dtype={"Index #": str,
-                                                                             "Slice #": str,
-                                                                             "Cell #": str})
+    df_2 = pd.read_excel(xlsx_filepath,sheet_name="RECs",skiprows=[0],dtype=str)
     
     df_2["Index #"] = df_1.iat[0,2].split(' ')[0].replace("-","_") + "-" + df_2["Index #"] + ".tif"
     df_2.rename(columns={"Index #":"Filename"},inplace=True)
@@ -120,15 +113,15 @@ def exportMarkDown(df_1, rec_filepath):
     # Set Strain
     df_expInfo.iloc[7,0] = df_1.iat[3,2]
     # Set Sex
-    df_expInfo.iloc[8,0] = "M"
+    df_expInfo.iloc[8,0] = df_1.iat[2,6]
     # Set Date of Birth
     df_expInfo.iloc[9,0] = df_1.iat[4,2].split(" ")[0]
     # Set Age(weeks)
     df_expInfo.iloc[10,0] = df_1.iat[4,6].split(".")[0]
     # Set Date of Injection
-    df_expInfo.iloc[11,0] = df_1.iat[9,2].split(" ")[0]
+    df_expInfo.iloc[11,0] = df_1.iat[10,2].split(" ")[0]
     # Set Incubated(weeks)
-    df_expInfo.iloc[12,0] = df_1.iat[9,6].split(".")[0]
+    df_expInfo.iloc[12,0] = df_1.iat[10,6].split(".")[0]
     # Set Injected Brain Area
     df_expInfo.iloc[13,0] = df_1.iat[5,6]
     # Set Coordinates_R(mm)
@@ -136,17 +129,17 @@ def exportMarkDown(df_1, rec_filepath):
                            df_1.iat[6,4].replace("(mm)","").replace("±","") + f"({df_1.iat[6,5]})",
                            df_1.iat[6,6].replace("(mm)","") + df_1.iat[6,7]]
     # Set Virus_R
-    df_expInfo.iloc[16] = ["200 nl/site", df_1.iat[7,2].split(" ")[0],""]
+    df_expInfo.iloc[16] = ["200 nl/site 1:1 mixture", df_1.iat[7,2].split(" ")[0], df_1.iat[7,2].split(" ")[2]]
     
     # Set OS_Cutting(mOsm/Kg)
-    df_expInfo.iloc[18,0] = df_1.iat[10,3]
+    df_expInfo.iloc[18,0] = df_1.iat[11,3]
     # Set OS_Holding(mOsm/Kg)
-    df_expInfo.iloc[19,0] = df_1.iat[11,3]
+    df_expInfo.iloc[19,0] = df_1.iat[12,3]
     # Set OS_Recording(mOsm/Kg)
-    df_expInfo.iloc[20,0] = df_1.iat[12,3]
+    df_expInfo.iloc[20,0] = df_1.iat[13,3]
     
     # Set LED_Trig_Mode
-    df_expInfo.iloc[21,0] = "TTL_Pulses"
+    df_expInfo.iloc[21] = ["TTL_Pulses", '', '']
     df_expInfo.fillna('', inplace=True)
     
     # Set Onset

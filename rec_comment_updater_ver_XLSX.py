@@ -1,5 +1,5 @@
 ## Author: Kang
-## Last Update: 2025-Feb-01
+## Last Update: 2025-Feb-03
 ## Purpose: Extract infos and recs from the xlsx file and export them as json files
 
 # Modules
@@ -12,18 +12,14 @@ from tabulate import tabulate
 from rich import print
 from glob import glob
 
-from classes import dialog_getPath
-from classes import dialog_confirm
-from functions.recovery import recovery
-from functions.read_excel_note import extractExcelData, exportMarkDown
-from functions.rec_scanner import scan_contents
-from functions.update_contents import contentUpdater
+from classes import GetPath, Confirm
+from functions import recovery, extractExcelData, exportMarkDown, scan_contents, contentUpdater
 
 # Set event handler
 app = QApplication(sys.argv)
 
 # Get the path of the folder containing the rec files
-dlg_recs = dialog_getPath.GetPath(title='Select a folder of rec files', filemode = 'dir')
+dlg_recs = GetPath(title='Select a folder of rec files', filemode = 'dir')
 rec_filepath = dlg_recs.get_path()
 
 # Control terms
@@ -37,7 +33,7 @@ if os.path.exists(rec_filepath):
             recovery(rec_filepath, rec_list)
         else:
             # Get the path of the xlsx file
-            dlg = dialog_getPath.GetPath(title="Please select a recording xlsx file", filemode='file', filetype='excel', init_dir=os.path.join(rec_filepath,'notes'))
+            dlg = GetPath(title="Please select a recording xlsx file", filemode='file', filetype='excel', init_dir=os.path.join(rec_filepath,'notes'))
             xlsx_filepath = dlg.get_path()
             if os.path.exists(xlsx_filepath):
                 expInfo, rec_summary = extractExcelData(xlsx_filepath)
@@ -157,11 +153,14 @@ if os.path.exists(rec_filepath):
                     "PUFF_CONC": False,
                     "PUFF_PERIOD": False,
                     "PUFF_COUNT": False,
+                    "PUFF_GAP": False,
                     "PUFF_PRESSURE": False,
                     "PUFF_TIP_SIZE": False,
+                    "PUFF_TIP_POS": False,
                     "BATHED_IN": False,
                     "BATHED_CONC": False,
                     "FLOWED": False,
+                    "LED_TRIG_MODE": False,
                 }
                 
                 EXP_CHECKLISTS = {
@@ -169,11 +168,14 @@ if os.path.exists(rec_filepath):
                     'PUMP':['pump', 'Pump', 'PUMP'],
                     'PUFF':['puff', 'Puff', 'PUFF'],
                     'PUFF_CONC':['ACh', 'J60'],
+                    'PUFF_GAP':['gap'],
                     'PUFF_PRESSURE':['pressure'],
                     'PUFF_TIP_SIZE':['diameter'],
+                    'PUFF_TIP_POS':['tipPos'],
+                    'LED_TRIG_MODE':['ledTrig'],
                 }
                 
-                CONDITIONS = ['PUFF', 'PUFF_CONC', 'PUFF_PRESSURE', 'PUFF_TIP_SIZE']
+                CONDITIONS = ['PUFF', 'PUFF_CONC', 'PUFF_GAP', 'PUFF_PRESSURE']
                 for key in CONDITIONS:
                     EXP_SETTINGS[key] = True
                 
@@ -192,13 +194,25 @@ if os.path.exists(rec_filepath):
                                     new_rec_summary.loc[row, cond]=comment_parts[idx+1]
                                     break
                 
+                # Insert the columns
+                if 'PUFF' in new_rec_summary.columns.tolist():
+                    insert_col_idx = new_rec_summary.columns.get_loc('PUFF_CONC')
+                    
+                    list_of_periods = rec_summary['Puffing'].tolist()
+                    PUFF_PERIOD = [period+'ms' for period in list_of_periods]
+                    new_rec_summary.insert(insert_col_idx+1, 'PUFF_PERIOD', PUFF_PERIOD)
+                    
+                    PUFF_COUNT = rec_summary['Pulses'].tolist()
+                    new_rec_summary.insert(insert_col_idx+2, 'PUFF_COUNT', PUFF_COUNT)
+                    
+                
                 print(tabulate(new_rec_summary, headers='keys', showindex=True, tablefmt="pretty"))
                 
                 new_contents = contentUpdater(new_rec_summary, list_of_kept_contents)
                 print("Content to be updated (last one): \n")
                 print(new_contents[-1])
                 
-                dlg_checkUpdate = dialog_confirm.Confirm(title='Update the REC files?', msg='Do you want to update the REC files?')
+                dlg_checkUpdate = Confirm(title='Update the REC files?', msg='Do you want to update the REC files?')
                 if dlg_checkUpdate.exec():
                     # Save the backup and the new summary
                     if not os.path.exists(os.path.join(rec_filepath, "backups")):

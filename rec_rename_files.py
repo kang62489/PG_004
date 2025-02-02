@@ -1,10 +1,9 @@
 ## Author: Kang
-## Last Updata: 2025-02-01
+## Last Updata: 2025-Feb-03
 ## Purpose: Rename recording files based on timestamps
 
 import os
 import sys
-import json
 from pathlib import Path
 from datetime import datetime
 from tabulate import tabulate
@@ -12,14 +11,13 @@ import pandas as pd
 from glob import glob
 from PySide6.QtWidgets import QApplication
 from rich import print
-from classes import dialog_getPath
-from classes import dialog_confirm
+from classes import GetPath, Confirm
 
 # Set event handler
 app = QApplication(sys.argv)
 
 # Get the path of the folder containing the rec files
-dlg_recs = dialog_getPath.GetPath(title='Select a folder of rec files', filemode = 'dir')
+dlg_recs = GetPath(title='Select a folder of rec files', filemode = 'dir')
 rec_filepath = dlg_recs.get_path()
 recovery_mode = False
 
@@ -60,7 +58,7 @@ if os.path.exists(rec_filepath):
         
         print(tabulate(rec_summary_new, headers='keys', showindex=True, tablefmt="pretty"))
         if recovery_mode == False:    
-            dlg_confirm_rename = dialog_confirm.Confirm(title='Confirm to rename rec files', msg='Do you want to rename the rec and tif files?')
+            dlg_confirm_rename = Confirm(title='Confirm to rename rec files', msg='Do you want to rename the rec and tif files?')
             if dlg_confirm_rename.exec():
                 ## Save backup
                 if os.path.exists(rec_filepath + '/backups') == False:
@@ -82,7 +80,7 @@ if os.path.exists(rec_filepath):
             else:
                 print(f"[red]Renaming cancelled![/red]")
         else:
-            get_recovery = dialog_getPath.GetPath(title='Select a csv backup file', filemode = 'file', filetype='csv')
+            get_recovery = GetPath(title='Select a csv backup file', filemode = 'file', filetype='csv')
             csv_filepath = get_recovery.get_path()
             if os.path.exists(csv_filepath):
                 rec_summary_recovery = pd.read_csv(csv_filepath)

@@ -1,5 +1,5 @@
 ## Author: Kang
-## Last Update: 2025-Feb-02
+## Last Update: 2025-Feb-03
 ## Purpose: update the metadata in the comment of each recording file
 ## based on the context in the comment of each recording file
 
@@ -11,19 +11,14 @@ from tabulate import tabulate
 from glob import glob
 from PySide6.QtWidgets import QApplication
 from rich import print
-from classes import dialog_getPath
-from classes import dialog_confirm
-from functions.recovery import recovery
-from functions.rec_scanner import scan_contents, generate_summary
-from functions.update_contents import contentUpdater
-
-
+from classes import GetPath, Confirm
+from functions import recovery, scan_contents, generate_summary, contentUpdater
 
 # Set event handler
 app = QApplication(sys.argv)
 
 # Get the path of the folder containing the rec files
-dlg_recs = dialog_getPath.GetPath(title='Select a folder of rec files', filemode = 'dir')
+dlg_recs = GetPath(title='Select a folder of rec files', filemode = 'dir')
 rec_filepath = dlg_recs.get_path()
 
 # Control terms
@@ -184,7 +179,7 @@ if os.path.exists(rec_filepath):
             print(new_contents[-1])
             
             # Update the content to each rec file
-            dlg_checkUpdate = dialog_confirm.Confirm(title='Update the REC files?', msg='Do you want to update the REC files?')
+            dlg_checkUpdate = Confirm(title='Update the REC files?', msg='Do you want to update the REC files?')
             if dlg_checkUpdate.exec():
                 # Save the backup and the new summary
                 if not os.path.exists(os.path.join(rec_filepath, "backups")):

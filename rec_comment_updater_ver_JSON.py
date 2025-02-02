@@ -1,5 +1,5 @@
 ## Author: Kang
-## Last Update: 2025-Jan-26
+## Last Update: 2025-Feb-03
 ## Purpose: update the metadata in the comment of each recording file
 ## based on the *_REC_summary_updated.json file in the notes folder
 
@@ -15,20 +15,14 @@ from glob import glob
 from PySide6.QtWidgets import QApplication
 from rich import print
 
-from classes import dialog_confirm
-from classes import dialog_getPath
-
-from functions.recovery import recovery
-from functions.rec_scanner import scan_contents
-from functions.update_contents import contentUpdater
-
-
+from classes import GetPath, Confirm
+from functions import recovery, scan_contents, contentUpdater
 
 # Set event handler
 app = QApplication(sys.argv)
 
 # Get the path of the folder containing the rec files
-dlg_recs = dialog_getPath.GetPath(title='Select a folder of rec files', filemode = 'dir')
+dlg_recs = GetPath(title='Select a folder of rec files', filemode = 'dir')
 rec_filepath = dlg_recs.get_path()
 # rec_filepath = "E:/PRO_iAChSnFR_Specificity/Raw/2023_09_26"
 
@@ -43,7 +37,7 @@ if os.path.exists(rec_filepath):
             recovery(rec_filepath, rec_list)
         else:
             # Get the path of the *_REC_summary_updated.json file
-            dlg_json = dialog_getPath.GetPath(title='Select the *_REC_summary_updated.json file', filemode = 'file', filetype='json', init_dir=os.path.join(rec_filepath,'notes'))
+            dlg_json = GetPath(title='Select the *_REC_summary_updated.json file', filemode = 'file', filetype='json', init_dir=os.path.join(rec_filepath,'notes'))
             json_filepath = dlg_json.get_path()
             
             if os.path.exists(json_filepath):
@@ -55,6 +49,8 @@ if os.path.exists(rec_filepath):
                 with open(json_filepath, mode="r") as f:
                     rec_summary = pd.DataFrame(json.load(f), dtype=str)
                 
+                rec_summary.fillna("", inplace=True)
+                
                 # Update the read REC summary
                 # Add prefix to the 'Cell/Pos' column of the rec_summary
                 prefix = ['SITE_', "CELL_"]        
@@ -62,12 +58,16 @@ if os.path.exists(rec_filepath):
                     rec_summary.loc[idx, "Cell/Pos"] = prefix[0]+val
                 
                 # swap the columns
-                columns_to_be_swapped = ['Filename', 'Timestamp', 'OBJ', 'Light', 'Intensity', 'Exposure']
+                columns_to_be_swapped = ['Filename', 'Timestamp', 'OBJ', 'Light', 'Intensity', 'Exposure', 'Signal', 'Frames']
                 columns_unchanged = rec_summary.columns.tolist()[len(columns_to_be_swapped):]
                 for name in columns_unchanged:
                     columns_to_be_swapped.append(name)
-                print("Columns to be swapped: ", columns_to_be_swapped)
-                new_rec_summary = rec_summary[columns_to_be_swapped]
+                    
+                print("REC Summary from JSON file (adjusted):")
+                print(tabulate(rec_summary, headers='keys', showindex=True, tablefmt="pretty"))
+                print("\n\n")
+                
+                rec_summary = rec_summary[columns_to_be_swapped]
                 
                 # Chanege the column names, add new columns and update the values
                 EXP_SETTING =[
@@ -83,6 +83,25 @@ if os.path.exists(rec_filepath):
                 
                 CAM_TRIG_MODE = ['EXT_EXP_CTRL', 'EXT_EXP_START']
                 
+                new_rec_summary = rec_summary.rename(columns={
+                    'OBJ': 'OBJ',
+                    'Light': 'EXC',
+                    'Intensity': 'LEVEL',
+                    'Exposure': 'EXPO',
+                    'Signal': 'EMI',
+                    'Frames': 'FRAMES',
+                    'Slice_#': 'SLICE',
+                    'Cell/Pos': 'AT',
+                    'Puff': EXP_SETTING[0],
+                    'P.Conc': EXP_SETTING[1],
+                    'P.Period': EXP_SETTING[2],
+                    'P.Pulses': EXP_SETTING[3],
+                    'P.Pressure': EXP_SETTING[4],
+                    # 'Bathed_with': EXP_SETTING[5],
+                    # 'B.Conc.': EXP_SETTING[6],
+                    # 'B.Flowed': EXP_SETTING[7]
+                })
+                
                 # Get the number of frames in each tif file
                 frames = []
                 for rec in rec_list:
@@ -91,29 +110,49 @@ if os.path.exists(rec_filepath):
                     with tifffile.TiffFile(tif_path) as img:
                         frames.append(f"{len(img.pages)}p")
                 
+                # Update the values of the new columns
+                list_of_Signal = rec_summary['Signal'].tolist()
+                list_of_EMI = []
+                list_of_EXC = []
+                for sig in list_of_Signal:
+                    if sig in ['GFP']:
+                        list_of_EMI.append('GREEN')
+                        list_of_EXC.append('LED_BLUE')
+                    elif sig in ['mCherry']:
+                        list_of_EMI.append('RED')
+                        list_of_EXC.append('LED_GREEN')
+                    elif sig in ["IRDIC", "IR"]:
+                        list_of_EMI.append('IR')
+                        list_of_EXC.append('HLG')
+                    else:
+                        pass
                 
+                list_of_Exposure = rec_summary['Exposure'].tolist()
+                list_of_EXPOs = [item.split('/')[0] for item in list_of_Exposure]
                 
-                new_rec_summary['Light'] = new_rec_summary['Light'].replace('LED', 'LED_BLUE')
-                new_rec_summary.rename(columns={'Light': 'EXC'}, inplace=True)
-                new_rec_summary.rename(columns={'Intensity': 'LEVEL'}, inplace=True)
-                new_rec_summary.rename(columns={'Exposure': 'EXPO'}, inplace=True)
-                new_rec_summary['EXPO'] = new_rec_summary['EXPO'].replace('40ms/50ms', '40ms')
-                new_rec_summary.insert(6, 'EMI', ['GREEN']*new_rec_summary.shape[0])
-                new_rec_summary.insert(7, 'FRAMES', frames)
-                new_rec_summary.insert(8, 'FPS', ['20Hz']*new_rec_summary.shape[0])
-                new_rec_summary.insert(9, 'CAM_TRIG_MODE', [CAM_TRIG_MODE[1]]*new_rec_summary.shape[0])
-                new_rec_summary.rename(columns={'Slice_#': 'SLICE'}, inplace=True)
-                new_rec_summary.rename(columns={'Cell/Pos': 'AT'}, inplace=True)
-                new_rec_summary.rename(columns={'Puff': EXP_SETTING[0]}, inplace=True)
-                new_rec_summary.rename(columns={'P.Conc': EXP_SETTING[1]}, inplace=True)
-                new_rec_summary.rename(columns={'P.Period': EXP_SETTING[2]}, inplace=True)
-                new_rec_summary.rename(columns={'P.Pulses': EXP_SETTING[3]}, inplace=True)
-                new_rec_summary.rename(columns={'P.Interval': 'PUFF_GAP'}, inplace=True)
-                new_rec_summary.rename(columns={'P.Pressure': EXP_SETTING[4]}, inplace=True)
-                new_rec_summary.rename(columns={'Bathed_with': EXP_SETTING[5]}, inplace=True)
-                new_rec_summary[EXP_SETTING[5]] = new_rec_summary[EXP_SETTING[5]].replace('Reco_ACSF', 'ACSF')
-                new_rec_summary.rename(columns={'B.Conc.': EXP_SETTING[6]}, inplace=True)
-                new_rec_summary.rename(columns={'B.Flowed': EXP_SETTING[7]}, inplace=True)
+                new_rec_summary.loc[:, 'EXC'] = list_of_EXC
+                new_rec_summary.loc[:, 'EXPO'] = list_of_EXPOs
+                new_rec_summary.loc[:, 'EMI'] = list_of_EMI
+                new_rec_summary.loc[:,'FRAMES'] = frames
+                
+                insert_FPS = new_rec_summary.columns.get_loc('FRAMES') + 1
+                new_rec_summary.insert(insert_FPS, 'FPS', ['20Hz']*new_rec_summary.shape[0])
+                insert_CAM_TRIG_MODE = new_rec_summary.columns.get_loc('FPS') + 1
+                new_rec_summary.insert(insert_CAM_TRIG_MODE, 'CAM_TRIG_MODE', [CAM_TRIG_MODE[1]]*new_rec_summary.shape[0])
+                
+                list_of_PPeriod = rec_summary['P.Period'].tolist()
+                list_of_periods = [item.split('/')[0] if item != "" else "" for item in list_of_PPeriod]
+                list_of_gaps = [item.split('/')[1] if item != "" else "" for item in list_of_PPeriod ]
+                new_rec_summary[EXP_SETTING[2]] = list_of_periods
+                
+                list_of_PPulses = rec_summary['P.Pulses'].tolist()
+                list_of_counts = [item.lstrip('x') if item != "" else "" for item in list_of_PPulses]
+                new_rec_summary[EXP_SETTING[3]] = list_of_counts
+                
+                insert_PUFF_GAP = new_rec_summary.columns.get_loc(EXP_SETTING[3]) + 1
+                new_rec_summary.insert(insert_PUFF_GAP, 'PUFF_GAP', list_of_gaps)
+                
+                # new_rec_summary[EXP_SETTING[5]] = new_rec_summary[EXP_SETTING[5]].replace('Reco_ACSF', 'ACSF')
                 
                 print("Updated REC Summary:")
                 print(tabulate(new_rec_summary, headers='keys', showindex=True, tablefmt="pretty"))
@@ -122,7 +161,7 @@ if os.path.exists(rec_filepath):
                 print("Updated Content (last one):")
                 print(list_of_new_content[-1])
                 
-                dlg_checkUpdate = dialog_confirm.Confirm(title='Update the REC files?', msg='Do you want to update the REC files?')
+                dlg_checkUpdate = Confirm(title='Update the REC files?', msg='Do you want to update the REC files?')
                 if dlg_checkUpdate.exec():
                     # Save backup files
                     if not os.path.exists(os.path.join(rec_filepath, "backups")):
