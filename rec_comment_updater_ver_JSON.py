@@ -55,10 +55,10 @@ if os.path.exists(rec_filepath):
                 # Add prefix to the 'Cell/Pos' column of the rec_summary
                 prefix = ['SITE_', "CELL_"]        
                 for idx, val in enumerate(rec_summary['Cell/Pos'].tolist()):
-                    rec_summary.loc[idx, "Cell/Pos"] = prefix[0]+val
+                    rec_summary.loc[idx, "Cell/Pos"] = prefix[0]+str(val)
                 
                 # swap the columns
-                columns_to_be_swapped = ['Filename', 'Timestamp', 'OBJ', 'Light', 'Intensity', 'Exposure', 'Signal', 'Frames']
+                columns_to_be_swapped = ['Filename', 'Timestamp', 'OBJ', 'Light', 'Intensity', 'Exposure', 'Signal']
                 columns_unchanged = rec_summary.columns.tolist()[len(columns_to_be_swapped):]
                 for name in columns_unchanged:
                     columns_to_be_swapped.append(name)
@@ -89,13 +89,13 @@ if os.path.exists(rec_filepath):
                     'Intensity': 'LEVEL',
                     'Exposure': 'EXPO',
                     'Signal': 'EMI',
-                    'Frames': 'FRAMES',
+                    # 'Frames': 'FRAMES',
                     'Slice_#': 'SLICE',
                     'Cell/Pos': 'AT',
                     'Puff': EXP_SETTING[0],
                     'P.Conc': EXP_SETTING[1],
                     'P.Period': EXP_SETTING[2],
-                    'P.Pulses': EXP_SETTING[3],
+                    # 'P.Pulses': EXP_SETTING[3],
                     'P.Pressure': EXP_SETTING[4],
                     # 'Bathed_with': EXP_SETTING[5],
                     # 'B.Conc.': EXP_SETTING[6],
@@ -130,27 +130,34 @@ if os.path.exists(rec_filepath):
                 list_of_Exposure = rec_summary['Exposure'].tolist()
                 list_of_EXPOs = [item.split('/')[0] for item in list_of_Exposure]
                 
+                # list_of_lightON = rec_summary['LightON'].tolist()
+                # list_of_LIGHT_ON = [item.split('/')[0] for item in list_of_lightON]
+                
                 new_rec_summary.loc[:, 'EXC'] = list_of_EXC
                 new_rec_summary.loc[:, 'EXPO'] = list_of_EXPOs
                 new_rec_summary.loc[:, 'EMI'] = list_of_EMI
-                new_rec_summary.loc[:,'FRAMES'] = frames
+                
+                insert_FRAMES = new_rec_summary.columns.get_loc('EMI') + 1
+                # new_rec_summary.loc[:,'FRAMES'] = frames
+                new_rec_summary.insert(insert_FRAMES, 'FRAMES', frames)
                 
                 insert_FPS = new_rec_summary.columns.get_loc('FRAMES') + 1
                 new_rec_summary.insert(insert_FPS, 'FPS', ['20Hz']*new_rec_summary.shape[0])
                 insert_CAM_TRIG_MODE = new_rec_summary.columns.get_loc('FPS') + 1
                 new_rec_summary.insert(insert_CAM_TRIG_MODE, 'CAM_TRIG_MODE', [CAM_TRIG_MODE[1]]*new_rec_summary.shape[0])
                 
-                list_of_PPeriod = rec_summary['P.Period'].tolist()
-                list_of_periods = [item.split('/')[0] if item != "" else "" for item in list_of_PPeriod]
-                list_of_gaps = [item.split('/')[1] if item != "" else "" for item in list_of_PPeriod ]
-                new_rec_summary[EXP_SETTING[2]] = list_of_periods
+                new_rec_summary['PUFF'] = new_rec_summary['PUFF'].replace('Reco_ACSF', 'ACSF')
+                # list_of_PPeriod = rec_summary['P.Period'].tolist()
+                # list_of_periods = [item.split('/')[0] if item != "" else "" for item in list_of_PPeriod]
+                # list_of_gaps = [item.split('/')[1] if item != "" else "" for item in list_of_PPeriod ]
+                # new_rec_summary[EXP_SETTING[2]] = list_of_periods
                 
-                list_of_PPulses = rec_summary['P.Pulses'].tolist()
-                list_of_counts = [item.lstrip('x') if item != "" else "" for item in list_of_PPulses]
-                new_rec_summary[EXP_SETTING[3]] = list_of_counts
+                # list_of_PPulses = rec_summary['P.Pulses'].tolist()
+                # list_of_counts = [item.lstrip('X') if item != "" else "" for item in list_of_PPulses]
+                # new_rec_summary[EXP_SETTING[3]] = list_of_counts
                 
-                insert_PUFF_GAP = new_rec_summary.columns.get_loc(EXP_SETTING[3]) + 1
-                new_rec_summary.insert(insert_PUFF_GAP, 'PUFF_GAP', list_of_gaps)
+                # insert_PUFF_GAP = new_rec_summary.columns.get_loc(EXP_SETTING[3]) + 1
+                # new_rec_summary.insert(insert_PUFF_GAP, 'PUFF_GAP', list_of_gaps)
                 
                 # new_rec_summary[EXP_SETTING[5]] = new_rec_summary[EXP_SETTING[5]].replace('Reco_ACSF', 'ACSF')
                 
