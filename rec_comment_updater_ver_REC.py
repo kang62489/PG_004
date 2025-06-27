@@ -58,8 +58,9 @@ if os.path.exists(rec_filepath):
             EXC = [None]*rec_summary.shape[0]
             LEVEL = [None]*rec_summary.shape[0]
             EMI = [None]*rec_summary.shape[0]
-            SLICE = [None]*rec_summary.shape[0]
-            AT = [None]*rec_summary.shape[0]
+            # SLICE = [None]*rec_summary.shape[0]
+            # AT = [None]*rec_summary.shape[0]
+            
             
             checklist_01 = ['10x', '10X', '60x', '60X']
             checklist_02 = ['GREEN', 'Green', 'RED', 'Red', 'GFP', 'mCherry', 'IRDIC', 'IR']
@@ -107,22 +108,22 @@ if os.path.exists(rec_filepath):
                             LEVEL[row] = findStr_03.upper()
                         break
                 
-                for findStr_04 in checklist_04:
-                    if findStr_04 in comment_parts:
-                        idx = comment_parts.index(findStr_04)
-                        SLICE[row]=comment_parts[idx+1].lstrip('0')
-                        break
+                # for findStr_04 in checklist_04:
+                #     if findStr_04 in comment_parts:
+                #         idx = comment_parts.index(findStr_04)
+                #         SLICE[row]=comment_parts[idx+1].lstrip('0')
+                #         break
                 
-                for findStr_05 in checklist_05:
-                    if findStr_05 in comment_parts:
-                        idx = comment_parts.index(findStr_05)
-                        if findStr_05 in ['cell', 'Cell']:
-                            AT[row]='CELL_'+comment_parts[idx+1].lstrip('0')
-                        elif findStr_05 in ['pos', 'Pos']:
-                            AT[row]='SITE_'+comment_parts[idx+1].lstrip('0')
-                        else:
-                            pass
-                        break
+                # for findStr_05 in checklist_05:
+                #     if findStr_05 in comment_parts:
+                #         idx = comment_parts.index(findStr_05)
+                #         if findStr_05 in ['cell', 'Cell']:
+                #             AT[row]='CELL_'+comment_parts[idx+1].lstrip('0')
+                #         elif findStr_05 in ['pos', 'Pos']:
+                #             AT[row]='SITE_'+comment_parts[idx+1].lstrip('0')
+                #         else:
+                #             pass
+                #         break
                 
             new_rec_summary['OBJ'] = OBJ
             new_rec_summary['EXC'] = EXC
@@ -132,15 +133,16 @@ if os.path.exists(rec_filepath):
             new_rec_summary['FRAMES'] = rec_summary['Frames']
             new_rec_summary['FPS'] = '20Hz'
             new_rec_summary['CAM_TRIG_MODE'] = CAM_TRIG_MODE[1]
-            new_rec_summary['SLICE'] = SLICE
-            new_rec_summary['AT'] = AT
+            new_rec_summary['PUFF'] = 'ALEXA_FLUO_488'
+            new_rec_summary['PUFF_CONC'] = '50uM'
+            
+            # new_rec_summary['SLICE'] = SLICE
+            # new_rec_summary['AT'] = AT
             
             # Extract the conditions from the comments
             EXP_SETTINGS = {
                 'ABF_SERIAL': False,
-                'PUMP': False,
                 'PUFF': False,
-                "PUFF": False,
                 "PUFF_CONC": False,
                 "PUFF_PERIOD": False,
                 "PUFF_COUNT": False,
@@ -148,14 +150,21 @@ if os.path.exists(rec_filepath):
                 "BATHED_IN": False,
                 "BATHED_CONC": False,
                 "FLOWED": False,
+                'PUMP': False,
             }
             
             EXP_CHECKLISTS = {
-                'ABF_SERIAL':['abf', 'ABF', 'Patch', 'ABF_#', 'pclamp'],
-                'PUMP':['pump', 'Pump', 'PUMP']
+                # 'ABF_SERIAL':['abf', 'ABF', 'Patch', 'ABF_#', 'pclamp'],
+                'PUFF_PERIOD':['period'],
+                'PUFF_COUNT':['pulses'],
+                'PUFF_PRESSURE':['pressure'],
+                'BATHED_IN':['bath'],
+                'PUMP':['pump', 'Pump', 'PUMP','flow']
             }
-            
-            CONDITIONS = EXP_SETTINGS['PUMP'] = True
+            CONDITIONS = ['PUFF_PERIOD', 'PUFF_COUNT', 'PUFF_PRESSURE', 'BATHED_IN', 'PUMP']
+            for key in CONDITIONS:
+                EXP_SETTINGS[key] = True
+
             
             for cond in EXP_SETTINGS.keys():
                 if EXP_SETTINGS[cond]:

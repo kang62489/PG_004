@@ -1,6 +1,6 @@
 ---
 Established: 2024-01-26
-Last Updated: 2024-02-03
+Last Updated: 2025-06-27
 Description: The python programs used for update the metadata in recording files on the basis of JSON, RECs, and XLSX files
 tags:
   - python
@@ -90,3 +90,6 @@ Preview the metadata which is going to be written to corresponding .tif.rec file
 > 		- 2024_05_27
 > 		- 2024_05_30
 
+# Log
+## 2025-Jun-27
+Remove the duplicated markdown file (keep only README.md)
